@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GUPIMETALWORKS</title>
+<meta name="description" content="Preparando el sitio de GUPIMETALWORKS: soldadura, estructuras metálicas y servicios generales.">
+<style>
+  :root{ --bg:#0f1115; --card:#1f2937; --fuego:#f97316; --oro:#eab308; --txt:#e5e7eb; --gris:#94a3b8; }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ height:100%; }
+  body{
+    background:var(--bg); color:var(--txt); font-family:Arial,Helvetica,sans-serif;
+    display:flex; align-items:center; justify-content:center; padding:24px; text-align:center;
+  }
+  .caja{ width:100%; max-width:420px; }
+  .logo{ font-family:"Arial Black",Arial,sans-serif; font-weight:900; font-size:clamp(26px,8vw,38px); letter-spacing:4px; color:#fff; }
+  .logo span{ color:var(--fuego); }
+  .tag{ margin-top:8px; font-size:11px; letter-spacing:4px; text-transform:uppercase; color:var(--gris); }
+  .anillo{ margin:34px auto 0; width:64px; height:64px; border-radius:50%;
+    border:3px solid #374151; border-top-color:var(--fuego); border-right-color:var(--oro);
+    animation:giro 1s linear infinite; }
+  @keyframes giro{ to{ transform:rotate(360deg); } }
+  .estado{ margin-top:22px; font-size:15px; color:var(--txt); min-height:42px; line-height:1.5; }
+  .barra{ margin-top:14px; height:6px; background:#11151c; border:1px solid #374151; border-radius:99px; overflow:hidden; }
+  .barra i{ display:block; height:100%; width:0%; background:linear-gradient(90deg,var(--fuego),var(--oro)); transition:width .4s ease; }
+  .seg{ margin-top:10px; font-size:11px; letter-spacing:2px; color:#64748b; }
+  .acciones{ margin-top:26px; display:flex; flex-direction:column; gap:10px; align-items:center; }
+  a.entrar{ font-size:13px; color:var(--gris); text-decoration:none; border-bottom:1px solid #374151; padding-bottom:2px; }
+  a.entrar:hover{ color:var(--fuego); border-color:var(--fuego); }
+  button#reintentar{
+    display:none; background:var(--fuego); color:#fff; border:0; border-radius:8px;
+    padding:11px 22px; font-size:13px; letter-spacing:1.5px; text-transform:uppercase; cursor:pointer;
+  }
+  button#reintentar:hover{ filter:brightness(1.08); }
+  .pie{ margin-top:30px; font-size:11px; color:#4b5563; letter-spacing:1px; }
+  noscript p{ margin-top:18px; color:var(--oro); font-size:14px; }
+  noscript a{ color:var(--fuego); }
+</style>
+</head>
+<body>
+  <main class="caja">
+    <div class="logo">GUPI<span>METALWORKS</span></div>
+    <div class="tag">Soldadura - Estructuras - Servicios</div>
+
+    <div class="anillo" aria-hidden="true"></div>
+
+    <p class="estado" id="estado" role="status" aria-live="polite">Cargando el sitio...</p>
+
+    <div class="barra" aria-hidden="true"><i id="prog"></i></div>
+    <p class="seg" id="seg">0 s</p>
+
+    <div class="acciones">
+      <button id="reintentar" type="button">Reintentar</button>
+      <a class="entrar" id="directo" href="https://gupi-metalworks-web.onrender.com/">Entrar directamente al sitio</a>
+    </div>
+
+    <p class="pie">GUPIMETALWORKS</p>
+
+    <noscript>
+      <p>Tu navegador tiene JavaScript desactivado.
+        <a href="https://gupi-metalworks-web.onrender.com/">Entra directamente al sitio</a>.</p>
+    </noscript>
+  </main>
+
+<script>
+(function () {
+  var DESTINO = 'https://gupi-metalworks-web.onrender.com/';
+  var estado = document.getElementById('estado');
+  var seg = document.getElementById('seg');
+  var prog = document.getElementById('prog');
+  var btn = document.getElementById('reintentar');
+
+  var inicio = Date.now();
+  var listo = false;
+  var activo = false;
+  var temporizador = null;
+  var esperaMs = 1500;
+
+  function ping() {
+    if (listo) return;
+    activo = true;
+    var ctl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    var corte = setTimeout(function () { if (ctl) ctl.abort(); }, 6000);
+    fetch(DESTINO + 'api/ping', { cache: 'no-store', signal: ctl ? ctl.signal : undefined })
+      .then(function (r) {
+        clearTimeout(corte);
+        if (!r.ok) throw new Error('estado ' + r.status);
+        return r.json();
+      })
+      .then(function () {
+        if (listo) return;
+        listo = true;
+        estado.textContent = 'Listo. Entrando al sitio...';
+        prog.style.width = '100%';
+        setTimeout(function () { window.location.replace(DESTINO); }, 350);
+      })
+      .catch(function () {
+        clearTimeout(corte);
+        if (listo) return;
+        esperaMs = Math.min(3000, esperaMs + 150);
+        temporizador = setTimeout(ping, esperaMs);
+      });
+  }
+
+  function pintar() {
+    var s = Math.floor((Date.now() - inicio) / 1000);
+    seg.textContent = s + ' s';
+    prog.style.width = Math.min(100, Math.round((s / 45) * 100)) + '%';
+    if (listo) return;
+    if (s < 4) estado.textContent = 'Cargando el sitio...';
+    else if (s < 25) estado.textContent = 'Despertando el servidor... esto puede tardar hasta 45 segundos.';
+    else if (s < 60) estado.textContent = 'Ya casi esta... seguimos esperando.';
+    else {
+      estado.textContent = 'El servidor sigue encendiendose. Puedes reintentar o entrar directamente.';
+      btn.style.display = 'inline-block';
+    }
+  }
+
+  btn.addEventListener('click', function () {
+    inicio = Date.now();
+    esperaMs = 1500;
+    btn.style.display = 'none';
+    estado.textContent = 'Reintentando...';
+    ping();
+  });
+
+  window.addEventListener('online', function () { if (!listo && !activo) ping(); });
+
+  setInterval(pintar, 250);
+  ping();
+})();
+</script>
+</body>
+</html>
