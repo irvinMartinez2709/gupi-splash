@@ -112,9 +112,9 @@
         listo = true;
         estado.textContent = 'Listo. Entrando al sitio...';
         prog.style.width = '100%';
-        /* el splash siempre se ve al menos 1 segundo; si el servidor estaba
+        /* el splash siempre se ve al menos 2 segundos; si el servidor estaba
            dormido ya pasó más tiempo y entra de inmediato */
-        var espera = Math.max(0, 1000 - (Date.now() - inicio)) + 80;
+        var espera = Math.max(0, 2000 - (Date.now() - inicio)) + 80;
         setTimeout(function () { window.location.replace(DESTINO); }, espera);
       })
       .catch(function () {
